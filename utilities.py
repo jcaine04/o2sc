@@ -1,14 +1,34 @@
 class Utilities(object):
 
-    def get_file_type_num(self, string):
-        lc = string.lower()
-        if '.pdf' in lc:
-            return '16'
-        elif '.tif' in lc:
-            return '2'
-        elif '.doc' in lc:
-            return '12'
-        elif '.txt' in lc:
-            return '1'
+    def __init__(self):
+        self.file_type_num_dict = {
+            'pdf': '16',
+            'tif': '2',
+            'jpg': '2',
+            'png': '2',
+            'doc': '12',
+            'txt': '1',
+            'xls': '13',
+            'ppt': '14',
+            'rtf': '15',
+            'htm': '17',
+            'avi': '18',
+            'mov': '19',
+            'wav': '20',
+            'xml': '32',
+            'msg': '36',
+        }
+
+    def get_file_type_num(self, file_path):
+
+        try:
+            file_extension = file_path.lower().rsplit('.', 1)[1]
+        except IndexError:
+            return 'Unknown File Format - No File Extension'
+
+        file_type_num = self.file_type_num_dict.get(file_extension)
+
+        if not file_type_num:
+            return 'Unknown File Format - %s ' % file_extension
         else:
-            return 'Unknown File Format'
+            return file_type_num

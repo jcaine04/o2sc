@@ -11,7 +11,7 @@ class Converter(object):
         self.u = Utilities()
 
     def convert_file(self, input_file_path, output_file_path, filename, delimiter, quotechar, doc_type,
-                     file_name_field, omit, header_mapping):
+                     file_path_field, unique_id, omit, header_mapping):
         """Convert ordered dip filed to self-configured
 
         Keyword arguments:
@@ -21,7 +21,8 @@ class Converter(object):
         delimiter -- Delimiter in the input file
         quotechar -- Quote Character used in the input file
         doc_type -- Doc Type used for all documents
-        file_name_field -- The header name in the input file that contains the file name
+        file_path_field -- The header name in the input file that contains the full path to the file
+        unique_id -- The header that contains the unique identifier for a document
         omit -- List of headers to omit from the input file
         header_mapping -- Dictionary mapping header name to value to write out in the output file
         """
@@ -36,7 +37,7 @@ class Converter(object):
 
         # If the list is empty, set to None
         if len(omit_list[0]) == 0:
-            omit_list = None
+            omit_list = []
 
         # Turn the header mapping into a dictionary
         header_mapping_dict = ast.literal_eval('{' + header_mapping + '}')
@@ -63,30 +64,53 @@ class Converter(object):
 
         # Write out the output file
         out_file.write('>>>>Self Configuring Tagged DIP<<<<' + '\n')
+
+        # placeholder for unique id
+        last_unique_id = ''
+        current_unique_id = ''
         for r in d:
-            out_file.write('BEGIN:' + '\n')
+            # get the current unique id
+            current_unique_id = r[unique_id]
 
-            # write out mapped values
-            if header_mapping_dict:
-                for i in header_mapping_dict:
-                    out_file.write(header_mapping_dict[i] + ': ' + r[i] + '\n')
+            # if the current unique id equals the last, continue the document
+            if current_unique_id == last_unique_id:
 
-            # write out the file type num
-            out_file.write('>>FileTypeNum: ' + self.u.get_file_type_num(r[file_name_field]) + '\n')
+                out_file.write('>>FullPath: ' + r[file_path_field] + '\n')
+                last_unique_id = current_unique_id
 
-            # write out doc type name, if needed
-            if doc_type:
-                out_file.write('>>DocType: ' + doc_type)
+            else:  # else, begin a new document
 
-            # remove omitted values
-            if omit_list:
-                for i in omit_list:
-                    del r[i]
+                out_file.write('BEGIN:' + '\n')
 
-            # write out the rest of the values
-            for key, value in r.iteritems():
-                if value:
-                    out_file.write(str(key) + ': ' + str(value) + '\n')
+                # write out mapped values
+                if header_mapping_dict:
+                    for i in header_mapping_dict:
+                        out_file.write(header_mapping_dict[i] + ': ' + r[i] + '\n')
+
+                # write out the file type num
+                out_file.write('>>FileTypeNum: ' + self.u.get_file_type_num(r[file_path_field]) + '\n')
+
+                # write out doc type name, if needed
+                if doc_type:
+                    out_file.write('>>DocType: ' + doc_type)
+
+                # remove omitted values
+                if omit_list:
+                    for i in omit_list:
+                        del r[i]
+
+                # write out the rest of the values
+                for key, value in r.iteritems():
+                    if value and key != file_path_field:
+                        out_file.write(str(key) + ': ' + str(value) + '\n')
+
+                # write out the full path
+                if r[file_path_field]:
+                    out_file.write('>>FullPath: ' + r[file_path_field] + '\n')
+
+                # set the last unique id
+                last_unique_id = r[unique_id]
+
         out_file.write('END:' + '\n')
 
         # Close out the output file

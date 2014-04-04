@@ -21,7 +21,8 @@ def o2sc():
         delimiter = str(request.form['delimiter'])
         quote_char = str(request.form['quote-char'])
         doc_type = str(request.form['doc-type'])
-        file_name_field = str(request.form['file-name-field'])
+        file_path_field = str(request.form['file-path-field'])
+        unique_id = str(request.form['unique-id'])
         omit = str(request.form['omit'])
         header_mapping = str(request.form['header-mapping'])
 
@@ -35,7 +36,8 @@ def o2sc():
                                             delimiter,
                                             quote_char,
                                             doc_type,
-                                            file_name_field,
+                                            file_path_field,
+                                            unique_id,
                                             omit,
                                             header_mapping)
             response = make_response(converted_file)
