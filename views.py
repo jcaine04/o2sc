@@ -6,8 +6,9 @@ from werkzeug.utils import secure_filename
 
 from . import o2sc
 from converter import Converter
+from zip import Zip
 
-ALLOWED_EXTENSIONS = set(['txt', 'csv'])
+ALLOWED_EXTENSIONS = set(['txt', 'csv', 'zip'])
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
@@ -30,17 +31,40 @@ def o2sc():
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
             c = Converter()
-            converted_file = c.convert_file(app.config['UPLOAD_FOLDER'],
-                                            app.config['DOWNLOAD_FOLDER'],
-                                            filename,
-                                            delimiter,
-                                            quote_char,
-                                            doc_type,
-                                            file_path_field,
-                                            unique_id,
-                                            omit,
-                                            header_mapping)
-            response = make_response(converted_file)
-            response.headers["Content-Disposition"] = "attachment; filename=_converted_" + filename
-            return response
+
+            if '.zip' in filename:
+                z = Zip()
+                extracted_list = z.unzip(app.config['UPLOAD_FOLDER'], filename)
+
+                for filename in extracted_list:
+                    c.convert_file(app.config['UPLOAD_FOLDER'],
+                                   app.config['DOWNLOAD_FOLDER'],
+                                   filename,
+                                   delimiter,
+                                   quote_char,
+                                   doc_type,
+                                   file_path_field,
+                                   unique_id,
+                                   omit,
+                                   header_mapping)
+
+                zip_archive = z.zip(app.config['DOWNLOAD_FOLDER'], extracted_list)
+                response = make_response(zip_archive)
+                response.headers["Content-Disposition"] = "attachment; filename=_converted_zip_archive.zip"
+                return response
+
+            else:
+                converted_file = c.convert_file(app.config['UPLOAD_FOLDER'],
+                                                app.config['DOWNLOAD_FOLDER'],
+                                                filename,
+                                                delimiter,
+                                                quote_char,
+                                                doc_type,
+                                                file_path_field,
+                                                unique_id,
+                                                omit,
+                                                header_mapping)
+                response = make_response(converted_file)
+                response.headers["Content-Disposition"] = "attachment; filename=_converted_" + filename
+                return response
     return render_template('o2sc/upload.html')

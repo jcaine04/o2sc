@@ -11,7 +11,7 @@ class Converter(object):
         self.u = Utilities()
 
     def convert_file(self, input_file_path, output_file_path, filename, delimiter, quotechar, doc_type,
-                     file_path_field, unique_id, omit, header_mapping):
+                     file_path_field, unique_id, omit, header_mapping, return_file=True):
         """Convert ordered dip filed to self-configured
 
         Keyword arguments:
@@ -26,6 +26,9 @@ class Converter(object):
         omit -- List of headers to omit from the input file
         header_mapping -- Dictionary mapping header name to value to write out in the output file
         """
+
+        # set the csv field size limit to max to handle large fields
+        csv.field_size_limit(sys.maxsize)
 
         # If quotechar isn't set, set to None
         if len(quotechar) == 0:
@@ -115,7 +118,8 @@ class Converter(object):
 
         # Close out the output file
         out_file.close()
+        if return_file:
+            # Read in the output file and return it
+            completed_file = open(output_file_path + filename, 'rb').read()
+            return completed_file
 
-        # Read in the output file and return it
-        completed_file = open(output_file_path + filename, 'rb').read()
-        return completed_file
